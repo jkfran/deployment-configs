@@ -1,10 +1,10 @@
 ---
-# Source: production/templates/deployment.yaml
+# Source: staging/templates/deployment.yaml
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
   name: canonical-com
-  namespace: production
+  namespace: staging
 spec:
   replicas: 5
   template:

@@ -18,8 +18,10 @@ spec:
   tls:
   - secretName: staging-canonical-com-tls
     hosts:
-    - staging.canonical.com
-    - www.staging.canonical.com
+    
+      - staging.canonical.com
+      - www.staging.canonical.com
+    
   rules:
   - host: staging.canonical.com
     http: &http_service

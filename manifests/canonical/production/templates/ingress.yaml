@@ -29,5 +29,5 @@ spec:
           servicePort: 80
 
   # Alias domains
-  - host: www.canonical-com
+  - host: www.canonical.com
     http: *http_service
