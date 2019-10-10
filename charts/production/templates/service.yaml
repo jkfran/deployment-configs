@@ -1,13 +1,13 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ .Values.name }}
+  name: {{ .Values.production.name | default .Values.name  }}
   namespace: {{ .Values.production.namespace | default "production" }}
 spec:
   selector:
-    app: {{ .Values.domain }}
+    app: {{ .Values.production.domain | default .Values.domain }}
   ports:
     - name: http
       protocol: TCP
-      port: {{ .Values.production.port | default 80 }}
+      port: {{ .Values.production.port | default .Values.port | default 80 }}
       targetPort: http

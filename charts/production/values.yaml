@@ -16,6 +16,8 @@ production:
 
   container:
     image: prod-comms.docker-registry.canonical.com/canonical.com
+
+    ## (Optional)
     tag: latest
 
   ## It will load the proxy ConfigMap in the Deployment
@@ -32,9 +34,8 @@ production:
   ## (Optional)
   readinessPath: /_status/check
 
-  ingress:
-    nginxConfig:  |
-      if ($host != 'canonical.com' ) {
-        rewrite ^ https://canonical.com$request_uri? permanent;
-      }
-      more_set_headers "Link: <https://assets.ubuntu.com>; rel=preconnect; crossorigin, <https://assets.ubuntu.com>; rel=preconnect";
+  nginxConfig:  |
+    if ($host != 'canonical.com' ) {
+      rewrite ^ https://canonical.com$request_uri? permanent;
+    }
+    more_set_headers "Link: <https://assets.ubuntu.com>; rel=preconnect; crossorigin, <https://assets.ubuntu.com>; rel=preconnect";
