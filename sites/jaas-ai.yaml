@@ -1,24 +1,43 @@
 name: jaas-ai
 domain: jaas.ai
 
+addWwwPrefixHost: true
+
+container:
+  image: prod-comms.docker-registry.canonical.com/jaas.ai
+
+useSquid: false
+
+envSecrets:
+  sentryDsn: https://5b54e6946be34749935c4dd2d9d01cb8@sentry.is.canonical.com//7
+  useGoogleApiKey: true
+
+extraDomains:
+  - name: docs-jujucharms-com
+    hosts:
+      - docs.jujucharms.com
+
 production:
-  container:
-    image: prod-comms.docker-registry.canonical.com/jaas.ai
-    tag: latest
-
-  useSquid: true
-  sentryDsn: https://aedc7a57f0bc4d22bf7c0b6d63c3e1bb@sentry.is.canonical.com//14
-
   nginxConfig:  |
-    if ($host != 'canonical.com' ) {
-      rewrite ^ https://canonical.com$request_uri? permanent;
+    if ($host = 'docs.jujucharms.com' ) {
+      rewrite ^ https://jaas.ai/docs$request_uri? permanent;
+    }
+    if ($host != 'jaas.ai' ) {
+      rewrite ^ https://jaas.ai$request_uri? permanent;
     }
     more_set_headers "Link: <https://assets.ubuntu.com>; rel=preconnect; crossorigin, <https://assets.ubuntu.com>; rel=preconnect";
 
 staging:
+  addWwwPrefixHost: false
+
+  extraDomains:
+    - name: docs-staging-jujucharms-com
+      hosts:
+        - docs.staging.jujucharms.com
+
   nginxConfig:  |
     more_set_headers "X-Robots-Tag: noindex";
-    if ($host != 'staging.canonical.com' ) {
-      rewrite ^ https://staging.canonical.com$request_uri? permanent;
+    if ($host = 'docs.staging.jujucharms.com' ) {
+      rewrite ^ https://staging.jaas.ai/docs$request_uri? permanent;
     }
     more_set_headers "Link: <https://assets.ubuntu.com>; rel=preconnect; crossorigin, <https://assets.ubuntu.com>; rel=preconnect";

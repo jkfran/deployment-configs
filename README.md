@@ -10,13 +10,13 @@ Production:
 
 ``` bash
 # E.g. for canonical.com
-helm template -f sites/canonical-com.yaml --output-dir ./manifests/canonical ./charts/production
+helm template -f sites/canonical-com.yaml ./charts/production | microk8s.kubectl apply -f -
 ```
 
 Staging:
 ``` bash
 # E.g. for canonical.com
-helm template -f sites/canonical-com.yaml --output-dir ./manifests/canonical ./charts/staging
+helm template -f sites/canonical-com.yaml ./charts/staging | microk8s.kubectl apply -f -
 ```
 
 ### Apply kubernetes manifests

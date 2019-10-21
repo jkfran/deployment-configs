@@ -1,13 +1,15 @@
+{{- $data := mergeOverwrite .Values .Values.staging -}}
+
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ .Values.staging.name | default .Values.name  }}
-  namespace: {{ .Values.staging.namespace | default "production" }}
+  name: {{ required "A valid name entry required!" $data.name  }}
+  namespace: {{ .Values.staging.namespace | default "staging" }}
 spec:
   selector:
-    app: {{ .Values.staging.domain | default .Values.domain }}
+    app: {{ $data.domain }}
   ports:
     - name: http
       protocol: TCP
-      port: {{ .Values.staging.port | default .Values.port | default 80 }}
+      port: {{ $data.port | default 80 }}
       targetPort: http

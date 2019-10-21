@@ -1,27 +1,49 @@
+{{- $data := mergeOverwrite .Values .Values.production -}}
+
 kind: Ingress
 apiVersion: extensions/v1beta1
 metadata:
-  name: {{ .Values.production.name | default .Values.name  }}
+  name: {{ required "A valid name entry required!" $data.name }}
   namespace: {{ .Values.production.namespace | default "production" }}
   annotations:
     kubernetes.io/ingress.class: "nginx"
+    {{- if $data.nginxConfig }}
     nginx.ingress.kubernetes.io/configuration-snippet: |
-{{ .Values.production.nginxConfig | default .Values.nginxConfig | indent 6 }}
+      {{- $data.nginxConfig | nindent 6 -}}
+    {{- end }}
 spec:
   tls:
-  - secretName: {{ .Values.production.name | default .Values.name  }}-tls
+  - secretName: {{ required "A valid name entry required!" $data.name }}-tls
     hosts:
-    - {{ .Values.production.domain | default .Values.domain }}
-    - www.{{ .Values.production.domain | default .Values.domain }}
+    - {{ required "A valid domain entry required!" $data.domain }}
+    {{- if $data.addWwwPrefixHost }}
+    - www.{{ required "A valid domain entry required!" $data.domain }}
+    {{- end }}
+  {{- range $data.extraDomains }}
+  - secretName: {{ .name }}-tls
+    hosts:
+      {{- range $host := .hosts }}
+      - {{ $host }}
+      {{- end }}
+  {{- end }}
   rules:
-  - host: {{ .Values.production.domain | default .Values.domain }}
+  - host: {{ required "A valid domain entry required!" $data.domain }}
     http: &http_service
       paths:
       - path: /
         backend:
-          serviceName: {{ .Values.production.name | default .Values.name  }}
-          servicePort: {{ .Values.production.port | default .Values.port | default 80 }}
+          serviceName: {{ required "A valid name entry required!" $data.name }}
+          servicePort: {{ $data.port | default 80 }}
 
+  {{- if $data.addWwwPrefixHost }}
   # Alias domains
-  - host: www.{{ .Values.production.domain | default .Values.domain }}
+  - host: www.{{ required "A valid domain entry required!" $data.domain }}
     http: *http_service
+  {{- end }}
+
+  {{- range $data.extraDomains }}
+  {{- range $host := .hosts }}
+  - host: {{ $host }}
+    http: *http_service
+  {{- end }}
+  {{- end }}
