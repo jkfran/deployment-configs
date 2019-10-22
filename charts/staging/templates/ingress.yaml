@@ -1,4 +1,4 @@
-{{- $data := mergeOverwrite .Values .Values.staging -}}
+{{ include "values-overwrite" . }}
 
 kind: Ingress
 apiVersion: extensions/v1beta1
@@ -7,9 +7,9 @@ metadata:
   namespace: {{ .Values.staging.namespace | default "staging" }}
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    {{- if $data.nginxConfig }}
+    {{- if .FinalValues.nginxConfig }}
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      {{- $data.nginxConfig | nindent 6 }}
+      {{- .FinalValues.nginxConfig | nindent 6 }}
     {{- end }}
 spec:
   tls:
@@ -17,21 +17,28 @@ spec:
     hosts:
     {{- if .Values.staging.domain }}
       - {{ .Values.staging.domain }}
-      {{- if $data.addWwwPrefixHost }}
+      {{- if .FinalValues.addWwwPrefixHost }}
       - www.{{ .Values.staging.domain }}
       {{- end }}
     {{- else }}
       - staging.{{ .Values.domain }}
-      {{- if $data.addWwwPrefixHost }}
+      {{- if .FinalValues.addWwwPrefixHost }}
       - www.staging.{{ .Values.domain }}
       {{- end }}
     {{- end }}
-  {{- range $data.extraDomains }}
-  - secretName: {{ .name }}-tls
+
+    {{- range $host := .FinalValues.extraHosts }}
+    {{- if not ($host.tlsSecret) }}
+      - {{ $host.domain }}
+    {{- end }}
+    {{- end }}
+
+  {{- range $host := .FinalValues.extraHosts }}
+  {{- if $host.tlsSecret }}
+  - secretName: {{ $host.tlsSecret }}
     hosts:
-      {{- range $host := .hosts }}
-      - {{ $host }}
-      {{- end }}
+      - {{ $host.domain }}
+  {{- end }}
   {{- end }}
   rules:
   - host: {{ if .Values.staging.domain }}{{ .Values.staging.domain }}{{ else }}staging.{{ .Values.domain }}{{end}}
@@ -39,18 +46,16 @@ spec:
       paths:
       - path: /
         backend:
-          serviceName: {{ required "A valid name entry required!" $data.name }}
-          servicePort: {{ $data.port | default 80 }}
+          serviceName: {{ required "A valid name entry required!" .Values.name }}
+          servicePort: {{ .FinalValues.port | default 80 }}
 
-  {{- if $data.addWwwPrefixHost }}
+  {{- if .FinalValues.addWwwPrefixHost }}
   # Alias domains
   - host: www.{{ if .Values.staging.domain }}{{ .Values.staging.domain }}{{ else }}staging.{{ .Values.domain }}{{end}}
     http: *http_service
   {{- end }}
 
-  {{- range $data.extraDomains }}
-  {{- range $host := .hosts }}
-  - host: {{ $host }}
+  {{- range $host := .FinalValues.extraHosts }}
+  - host: {{ $host.domain }}
     http: *http_service
-  {{- end }}
   {{- end }}

@@ -1,42 +1,42 @@
-{{- $data := mergeOverwrite .Values .Values.staging -}}
+{{ include "values-overwrite" . }}
 
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: {{ required "A valid name entry required!" $data.name }}
+  name: {{ required "A valid name entry required!" .Values.name }}
   namespace: {{ .Values.staging.namespace | default "staging" }}
 spec:
-  replicas: {{ $data.replicas | default 5 }}
+  replicas: {{ .FinalValues.replicas | default 5 }}
   template:
     metadata:
       labels:
-        app: {{ required "A valid domain entry required!" $data.domain }}
+        app: {{ required "A valid domain entry required!" .Values.domain }}
     spec:
       containers:
-        - name: {{ required "A valid name entry required!" $data.name }}
-          image: {{ required "A valid container.image entry required!" $data.container.image }}:{{ $data.container.tag | default "latest" }}
+        - name: {{ required "A valid name entry required!" .Values.name }}
+          image: {{ required "A valid container.image entry required!" .FinalValues.container.image }}:{{ .FinalValues.container.tag | default "latest" }}
           ports:
             - name: http
-              containerPort: {{ $data.port | default 80 }}
+              containerPort: {{ .FinalValues.port | default 80 }}
           envFrom:
             - configMapRef:
                 name: global-envvars
                 optional: true
 
-            {{- if $data.useSquid }}
+            {{- if .FinalValues.useSquid }}
             - configMapRef:
                 name: proxy-config
                 optional: true
             {{- end }}
 
-          {{- if $data.envSecrets }}
+          {{- if .FinalValues.envSecrets }}
           env:
-            {{- if $data.envSecrets.sentryDsn }}
+            {{- if .FinalValues.envSecrets.sentryDsn }}
             - name: SENTRY_DSN
-              value: {{ $data.envSecrets.sentryDsn }}
+              value: {{ .FinalValues.envSecrets.sentryDsn }}
             {{- end }}
 
-            {{- if $data.envSecrets.useGoogleApiKey }}
+            {{- if .FinalValues.envSecrets.useGoogleApiKey }}
             - name: SEARCH_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -47,10 +47,10 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: {{ $data.readinessPath | default "/_status/check" | quote }}
-              port: {{ $data.port | default 80 }}
+              path: {{ .FinalValues.readinessPath | default "/_status/check" | quote }}
+              port: {{ .FinalValues.port | default 80 }}
             timeoutSeconds: 3
             periodSeconds: 5
           resources:
             limits:
-              memory: {{ $data.memory | default "256Mi" | quote }}
+              memory: {{ .FinalValues.memory | default "256Mi" | quote }}

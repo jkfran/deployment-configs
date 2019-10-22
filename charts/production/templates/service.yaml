@@ -1,15 +1,15 @@
-{{- $data := mergeOverwrite .Values .Values.production -}}
+{{ include "values-overwrite" . }}
 
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ required "A valid name entry required!" $data.name }}
+  name: {{ required "A valid name entry required!" .FinalValues.name }}
   namespace: {{ .Values.production.namespace | default "production" }}
 spec:
   selector:
-    app: {{ required "A valid domain entry required!" $data.domain }}
+    app: {{ required "A valid domain entry required!" .FinalValues.domain }}
   ports:
     - name: http
       protocol: TCP
-      port: {{ $data.port | default 80 }}
+      port: {{ .FinalValues.port | default 80 }}
       targetPort: http

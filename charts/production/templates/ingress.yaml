@@ -1,49 +1,59 @@
-{{- $data := mergeOverwrite .Values .Values.production -}}
+{{ include "values-overwrite" . }}
 
 kind: Ingress
 apiVersion: extensions/v1beta1
 metadata:
-  name: {{ required "A valid name entry required!" $data.name }}
+  name: {{ required "A valid name entry required!" .FinalValues.name }}
   namespace: {{ .Values.production.namespace | default "production" }}
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    {{- if $data.nginxConfig }}
+    {{- if .FinalValues.nginxConfig }}
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      {{- $data.nginxConfig | nindent 6 -}}
+      {{- .FinalValues.nginxConfig | nindent 6 -}}
     {{- end }}
 spec:
   tls:
-  - secretName: {{ required "A valid name entry required!" $data.name }}-tls
-    hosts:
-    - {{ required "A valid domain entry required!" $data.domain }}
-    {{- if $data.addWwwPrefixHost }}
-    - www.{{ required "A valid domain entry required!" $data.domain }}
+  - secretName:
+    {{- if .FinalValues.tlsSecretName }}
+      {{ .FinalValues.tlsSecretName }}
+    {{- else }}
+      {{ required "A valid name entry required!" .FinalValues.name }}-tls
     {{- end }}
-  {{- range $data.extraDomains }}
-  - secretName: {{ .name }}-tls
     hosts:
-      {{- range $host := .hosts }}
-      - {{ $host }}
-      {{- end }}
+      - {{ required "A valid domain entry required!" .FinalValues.domain }}
+    {{- if .FinalValues.addWwwPrefixHost }}
+      - www.{{ required "A valid domain entry required!" .FinalValues.domain }}
+    {{- end }}
+
+    {{- range $host := .FinalValues.extraHosts }}
+    {{- if not ($host.tlsSecret) }}
+      - {{ $host.domain }}
+    {{- end }}
+    {{- end }}
+
+  {{- range $host := .FinalValues.extraHosts }}
+  {{- if $host.tlsSecret }}
+  - secretName: {{ $host.tlsSecret }}
+    hosts:
+      - {{ $host.domain }}
+  {{- end }}
   {{- end }}
   rules:
-  - host: {{ required "A valid domain entry required!" $data.domain }}
+  - host: {{ required "A valid domain entry required!" .FinalValues.domain }}
     http: &http_service
       paths:
       - path: /
         backend:
-          serviceName: {{ required "A valid name entry required!" $data.name }}
-          servicePort: {{ $data.port | default 80 }}
+          serviceName: {{ required "A valid name entry required!" .FinalValues.name }}
+          servicePort: {{ .FinalValues.port | default 80 }}
 
-  {{- if $data.addWwwPrefixHost }}
+  {{- if .FinalValues.addWwwPrefixHost }}
   # Alias domains
-  - host: www.{{ required "A valid domain entry required!" $data.domain }}
+  - host: www.{{ required "A valid domain entry required!" .FinalValues.domain }}
     http: *http_service
   {{- end }}
 
-  {{- range $data.extraDomains }}
-  {{- range $host := .hosts }}
-  - host: {{ $host }}
+  {{- range $host := .FinalValues.extraHosts }}
+  - host: {{ $host.domain }}
     http: *http_service
-  {{- end }}
   {{- end }}

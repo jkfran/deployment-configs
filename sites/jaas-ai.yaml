@@ -12,11 +12,12 @@ envSecrets:
   sentryDsn: https://5b54e6946be34749935c4dd2d9d01cb8@sentry.is.canonical.com//7
   useGoogleApiKey: true
 
-extraDomains:
-  - name: docs-jujucharms-com
-    hosts:
-      - docs.jujucharms.com
+extraHosts:
+  - host:
+    domain: docs.jujucharms.com
+    tlsSecret: docs-jujucharms-com-tls
 
+# Overrides for production
 production:
   nginxConfig:  |
     if ($host = 'docs.jujucharms.com' ) {
@@ -27,13 +28,14 @@ production:
     }
     more_set_headers "Link: <https://assets.ubuntu.com>; rel=preconnect; crossorigin, <https://assets.ubuntu.com>; rel=preconnect";
 
+# Overrides for staging
 staging:
   addWwwPrefixHost: false
 
-  extraDomains:
-    - name: docs-staging-jujucharms-com
-      hosts:
-        - docs.staging.jujucharms.com
+  extraHosts:
+    - host:
+      domain: docs.staging.jujucharms.com
+      tlsSecret: docs-staging-jujucharms-com
 
   nginxConfig:  |
     more_set_headers "X-Robots-Tag: noindex";
