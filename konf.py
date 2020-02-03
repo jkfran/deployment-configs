@@ -57,29 +57,39 @@ def is_apex_domain(context, s):
 
 
 class Konf:
-    def __init__(self, values_file, env, local_qa=False, docker_tag=None):
+    def __init__(
+        self, values_file, env, local_qa=False, docker_tag=None, context=None,
+    ):
         self.deployment_env = env
 
         # Load project data
-        self.load_values(values_file, local_qa, docker_tag)
+        self.load_values(values_file, local_qa, docker_tag, context)
 
-    def load_values(self, values_file, local_qa=False, docker_tag=None):
+    def load_values(
+        self, values_file, local_qa=False, docker_tag=None, context=None,
+    ):
         """This reads the project values from the yaml file
 
         Parameters:
         values_file (io.TextIOWrapper): project values
-        env (string): production or staging
         local_qa (boolean): Override values for local qa
         docker_tag (string): Override docker tag value
+        context
         """
 
         self.values = yaml.load(values_file, Loader=yaml.FullLoader)
 
+        if context:
+            for c in context:
+                key, value = c.split("=")
+                self.values[key] = value
+
         self.name = self.values.get("name")
         self.domain = self.values["domain"]
 
-        # Environment overrides
-        self.values.update(self.values.get(self.deployment_env, {}))
+        # Environment overrides"
+        if self.deployment_env in ["production", "staging"]:
+            self.values.update(self.values.get(self.deployment_env, {}))
 
         # Set deployment environment namespace
         self.namespace = self.deployment_env
@@ -135,7 +145,7 @@ if __name__ == "__main__":
         "env",
         type=str,
         help="Deployment environment.",
-        choices=["production", "staging"],
+        choices=["production", "staging", "demo"],
     )
 
     parser.add_argument(
@@ -150,6 +160,10 @@ if __name__ == "__main__":
         help="Docker tag to deploy",
         default="latest",
         dest="docker_tag",
+    )
+
+    parser.add_argument(
+        "--context", type=str, nargs="+", default=None, dest="context",
     )
 
     args = parser.parse_args()
